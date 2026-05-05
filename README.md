@@ -1,5 +1,7 @@
 # claude-status-line
 
+**PT-BR** · [EN](README.en.md)
+
 Status line em PT-BR para o [Claude Code](https://claude.com/claude-code) mostrando modelo, uso de contexto e rate limits (sessão de 5h e semanal de 7d), com cores e tempo até o reset.
 
 Exemplo:
