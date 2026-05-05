@@ -27,6 +27,14 @@ curl -fsSL https://raw.githubusercontent.com/matheustimbo/claude-status-line/mai
 
 Then restart Claude Code. The installer downloads the script to `~/.claude/statusline-command.sh` and adds the `statusLine` block to your `~/.claude/settings.json` (preserving any existing config).
 
+The default uses `refreshInterval: 5` (refresh every 5s — useful when you have multiple terminals running in parallel and want the line to be fresh when you switch windows). Override via env var:
+
+```bash
+REFRESH_INTERVAL=10 curl -fsSL https://raw.githubusercontent.com/matheustimbo/claude-status-line/main/install.sh | bash
+```
+
+> No API or token cost — the status line is rendered locally. CPU usage is negligible even with 10+ windows open.
+
 ### Manual install
 
 <details>
