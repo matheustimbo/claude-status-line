@@ -16,12 +16,23 @@ Colors: green (<50%), yellow (<80%), red (≥80%).
 
 ## Requirements
 
-- `bash`
+- `bash`, `curl`
 - [`jq`](https://stedolan.github.io/jq/) — `brew install jq` (macOS) or `apt install jq` (Linux)
 
-## Installation
+## One-line install
 
-1. Copy the script to `~/.claude/`:
+```bash
+curl -fsSL https://raw.githubusercontent.com/matheustimbo/claude-status-line/main/install.sh | bash
+```
+
+Then restart Claude Code. The installer downloads the script to `~/.claude/statusline-command.sh` and adds the `statusLine` block to your `~/.claude/settings.json` (preserving any existing config).
+
+### Manual install
+
+<details>
+<summary>If you'd rather not pipe a script to bash</summary>
+
+1. Download the script to `~/.claude/`:
 
    ```bash
    curl -o ~/.claude/statusline-command.sh \
@@ -41,6 +52,8 @@ Colors: green (<50%), yellow (<80%), red (≥80%).
    ```
 
 3. Restart Claude Code.
+
+</details>
 
 ## How it works
 
