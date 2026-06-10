@@ -5,6 +5,9 @@ input=$(cat)
 # Model
 model=$(echo "$input" | jq -r '.model.display_name // "?"')
 
+# Effort
+effort=$(echo "$input" | jq -r '.effort.level // empty')
+
 # Context window
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 
@@ -50,8 +53,20 @@ fmt_reset() {
 
 parts=()
 
-# Modelo
-parts+=("$(printf '\033[35m%s\033[0m' "$model")")
+# Modelo (+ esforço atual)
+if [ -n "$effort" ]; then
+  case "$effort" in
+    low) effort_str="baixo" ;;
+    medium) effort_str="médio" ;;
+    high) effort_str="alto" ;;
+    xhigh) effort_str="extra-alto" ;;
+    max) effort_str="máximo" ;;
+    *) effort_str="$effort" ;;
+  esac
+  parts+=("$(printf '\033[35m%s\033[0m \033[90m(esforço %s)\033[0m' "$model" "$effort_str")")
+else
+  parts+=("$(printf '\033[35m%s\033[0m' "$model")")
+fi
 
 # Contexto
 if [ -n "$used_pct" ]; then
