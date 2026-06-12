@@ -2,59 +2,60 @@
 
 # 📊 claude-status-line
 
-**Status line em PT-BR para o [Claude Code](https://claude.com/claude-code)** — saiba sempre quanto resta dos seus rate limits, sem sair do terminal.
+**A Portuguese (BR) status line for [Claude Code](https://claude.com/claude-code)** — always know how much of your rate limits is left, without leaving the terminal.
 
-[![Instalação em uma linha](https://img.shields.io/badge/instala%C3%A7%C3%A3o-uma%20linha-brightgreen)](#-instalação-uma-linha)
-[![Shell](https://img.shields.io/badge/feito%20em-bash%20%2B%20jq-blue)](statusline-command.sh)
-[![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-yellow)](LICENSE)
-[![PT-BR](https://img.shields.io/badge/idioma-PT--BR-green)](README.md)
+[![One-line install](https://img.shields.io/badge/install-one%20line-brightgreen)](#-one-line-install)
+[![Shell](https://img.shields.io/badge/built%20with-bash%20%2B%20jq-blue)](statusline-command.sh)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+[![PT-BR](https://img.shields.io/badge/language-PT--BR-green)](README.pt-BR.md)
 
-**PT-BR** · [EN](README.en.md)
+**EN** · [PT-BR](README.pt-BR.md)
 
 </div>
 
 ---
 
-Mostra **modelo**, **nível de esforço**, **uso de contexto** e **rate limits** (sessão de 5h e semanal de 7d), com cores e tempo até o reset:
+Shows the **active model**, **current effort level**, **context window usage**, and **rate limits** (5-hour session and 7-day weekly), with colors and time until reset:
 
 ```
 Opus 4.7 (1M context) (esforço alto) | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
 ```
 
-🟢 verde (<50%) · 🟡 amarelo (<80%) · 🔴 vermelho (≥80%)
+🟢 green (<50%) · 🟡 yellow (<80%) · 🔴 red (≥80%)
 
-## ✨ Por quê?
+> Labels are in Portuguese (`Contexto`, `Sessao`, `Semanal`, `reseta em`). If you want them in English, edit `statusline-command.sh` directly — it's a small bash script.
 
-- ⏱️ **Nunca mais seja surpreendido pelo rate limit** — veja sessão e semanal em tempo real, com countdown até o reset
-- 🧠 **Contexto sempre visível** — saiba quando está na hora de compactar
-- 🪶 **Zero custo** — sem API, sem tokens; tudo renderizado localmente, CPU desprezível mesmo com 10+ janelas abertas
-- 🇧🇷 **Em português**, do jeito que a gente fala
+## ✨ Why?
 
-## 📦 Requisitos
+- ⏱️ **Never get surprised by a rate limit again** — see session and weekly usage in real time, with a countdown to reset
+- 🧠 **Context always visible** — know when it's time to compact
+- 🪶 **Zero cost** — no API, no tokens; everything rendered locally, negligible CPU even with 10+ windows open
+
+## 📦 Requirements
 
 - `bash`, `curl`
-- [`jq`](https://stedolan.github.io/jq/) — `brew install jq` (macOS) ou `apt install jq` (Linux)
+- [`jq`](https://stedolan.github.io/jq/) — `brew install jq` (macOS) or `apt install jq` (Linux)
 
-## 🚀 Instalação (uma linha)
+## 🚀 One-line install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/matheustimbo/claude-status-line/main/install.sh | bash
 ```
 
-Depois reinicie o Claude Code. O instalador baixa o script pra `~/.claude/statusline-command.sh` e adiciona o bloco `statusLine` ao seu `~/.claude/settings.json` (preservando o que já estiver lá).
+Then restart Claude Code. The installer downloads the script to `~/.claude/statusline-command.sh` and adds the `statusLine` block to your `~/.claude/settings.json` (preserving any existing config).
 
-O default usa `refreshInterval: 5` (atualiza a cada 5s — útil quando você tem vários terminais em paralelo e quer que a linha esteja fresca quando troca de janela). Pra mudar, passe a env var:
+The default uses `refreshInterval: 5` (refresh every 5s — useful when you have multiple terminals running in parallel and want the line to be fresh when you switch windows). Override via env var:
 
 ```bash
 REFRESH_INTERVAL=10 curl -fsSL https://raw.githubusercontent.com/matheustimbo/claude-status-line/main/install.sh | bash
 ```
 
-### Instalação manual
+### Manual install
 
 <details>
-<summary>Se preferir não rodar o script</summary>
+<summary>If you'd rather not pipe a script to bash</summary>
 
-1. Baixe o script pra `~/.claude/`:
+1. Download the script to `~/.claude/`:
 
    ```bash
    curl -o ~/.claude/statusline-command.sh \
@@ -62,7 +63,7 @@ REFRESH_INTERVAL=10 curl -fsSL https://raw.githubusercontent.com/matheustimbo/cl
    chmod +x ~/.claude/statusline-command.sh
    ```
 
-2. Adicione o bloco `statusLine` no seu `~/.claude/settings.json`:
+2. Add the `statusLine` block to your `~/.claude/settings.json`:
 
    ```json
    {
@@ -73,22 +74,22 @@ REFRESH_INTERVAL=10 curl -fsSL https://raw.githubusercontent.com/matheustimbo/cl
    }
    ```
 
-3. Reinicie o Claude Code.
+3. Restart Claude Code.
 
 </details>
 
-## ⚙️ Como funciona
+## ⚙️ How it works
 
-O Claude Code envia um JSON via stdin pra cada execução da status line, contendo `model`, `effort`, `context_window` e `rate_limits`. O script lê com `jq` e formata em PT-BR com ANSI colors. Simples assim — um único arquivo bash, fácil de customizar.
+Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `context_window`, and `rate_limits`. The script parses it with `jq` and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
 
-## 📄 Licença
+## 📄 License
 
-MIT — use, modifique e compartilhe à vontade.
+MIT — use, modify, and share freely.
 
 ---
 
 <div align="center">
 
-Feito com ☕ por [@matheustimbo](https://github.com/matheustimbo) — se te ajudou, deixa uma ⭐!
+Made with ☕ by [@matheustimbo](https://github.com/matheustimbo) — if this helped you, drop a ⭐!
 
 </div>
