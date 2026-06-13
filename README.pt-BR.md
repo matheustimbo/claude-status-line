@@ -101,7 +101,7 @@ A status line é configurada por variáveis de ambiente no `command` do seu `~/.
 
 **Idioma** — `STATUSLINE_LANG`: `pt` ou `en`. Por padrão usa o idioma do sistema (de `LANG`/`LC_*` ou do `AppleLocale` no macOS), caindo pra inglês se não for suportado.
 
-**Ligar/desligar seções** — defina como `0` pra esconder (todas aparecem por padrão):
+**Seções base** — aparecem por padrão; defina como `0` pra esconder:
 
 | Variável        | Seção                            |
 | --------------- | -------------------------------- |
@@ -112,9 +112,28 @@ A status line é configurada por variáveis de ambiente no `command` do seu `~/.
 | `SHOW_SESSION`  | Rate limit da sessão (5h)        |
 | `SHOW_WEEKLY`   | Rate limit semanal (7d)          |
 
+**Seções extras** — escondidas por padrão; defina como `1` pra mostrar:
+
+| Variável             | Seção                                                |
+| -------------------- | ---------------------------------------------------- |
+| `SHOW_COST`          | Custo da sessão em USD (ex. `$0.42`)                 |
+| `SHOW_OUTPUT_STYLE`  | Output style atual (ex. `🎨 default`)                |
+| `SHOW_GIT_DIRTY`     | Adiciona `*` na branch quando há mudanças não commitadas |
+| `SHOW_GIT_AHEAD`     | Ahead/behind vs upstream (ex. `↑2 ↓1`)               |
+| `SHOW_CONTEXT_WARN`  | Prefixa `⚠️` quando o contexto está alto              |
+| `CONTEXT_WARN_AT`    | Limiar (%) do aviso de contexto (padrão `80`)        |
+
+**Aparência** — os defaults preservam o visual atual:
+
+| Variável           | Efeito                                                                 |
+| ------------------ | ---------------------------------------------------------------------- |
+| `STATUSLINE_SEP`   | Separador entre seções (padrão `\|`), ex. `STATUSLINE_SEP=" • "`       |
+| `STATUSLINE_ORDER` | Ordem custom das seções, chaves separadas por vírgula: `model,git,context,session,weekly,cost,style` |
+| `STATUSLINE_THEME` | `dark` (padrão) ou `light` (cores pra fundo claro)                     |
+
 ## ⚙️ Como funciona
 
-O Claude Code envia um JSON via stdin pra cada execução da status line, contendo `model`, `effort`, `workspace`, `context_window` e `rate_limits`. O script lê com `jq` (e chama o `git` pra branch/worktree) e formata em PT-BR ou inglês com ANSI colors. Simples assim — um único arquivo bash, fácil de customizar.
+O Claude Code envia um JSON via stdin pra cada execução da status line, contendo `model`, `effort`, `workspace`, `context_window`, `rate_limits`, `cost` e `output_style`. O script lê com `jq` (e chama o `git` pra branch/worktree) e formata em PT-BR ou inglês com ANSI colors. Simples assim — um único arquivo bash, fácil de customizar.
 
 ## 📄 Licença
 

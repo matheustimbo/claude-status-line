@@ -102,7 +102,7 @@ The status line is configured via environment variables in the `command` of your
 
 **Language** — `STATUSLINE_LANG`: `pt` or `en`. Defaults to your system language (from `LANG`/`LC_*` or macOS `AppleLocale`), falling back to English if it isn't supported.
 
-**Toggle sections** — set any of these to `0` to hide it (all shown by default):
+**Core sections** — shown by default; set to `0` to hide:
 
 | Variable        | Section                        |
 | --------------- | ------------------------------ |
@@ -113,9 +113,28 @@ The status line is configured via environment variables in the `command` of your
 | `SHOW_SESSION`  | 5-hour session rate limit      |
 | `SHOW_WEEKLY`   | 7-day weekly rate limit        |
 
+**Extra sections** — hidden by default; set to `1` to show:
+
+| Variable             | Section                                              |
+| -------------------- | ---------------------------------------------------- |
+| `SHOW_COST`          | Session cost in USD (e.g. `$0.42`)                   |
+| `SHOW_OUTPUT_STYLE`  | Active output style (e.g. `🎨 default`)              |
+| `SHOW_GIT_DIRTY`     | Appends `*` to the branch when there are uncommitted changes |
+| `SHOW_GIT_AHEAD`     | Ahead/behind vs upstream (e.g. `↑2 ↓1`)              |
+| `SHOW_CONTEXT_WARN`  | Prefixes a `⚠️` when context usage is high            |
+| `CONTEXT_WARN_AT`    | Threshold (%) for the context warning (default `80`) |
+
+**Appearance** — defaults keep the current look:
+
+| Variable           | Effect                                                                 |
+| ------------------ | ---------------------------------------------------------------------- |
+| `STATUSLINE_SEP`   | Separator between sections (default `\|`), e.g. `STATUSLINE_SEP=" • "` |
+| `STATUSLINE_ORDER` | Custom section order, comma-separated keys: `model,git,context,session,weekly,cost,style` |
+| `STATUSLINE_THEME` | `dark` (default) or `light` (colors tuned for light backgrounds)       |
+
 ## ⚙️ How it works
 
-Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `workspace`, `context_window`, and `rate_limits`. The script parses it with `jq` (and shells out to `git` for the branch/worktree) and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
+Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `workspace`, `context_window`, `rate_limits`, `cost`, and `output_style`. The script parses it with `jq` (and shells out to `git` for the branch/worktree) and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
 
 ## 📄 License
 
