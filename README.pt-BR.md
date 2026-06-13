@@ -128,6 +128,9 @@ A status line é configurada por variáveis de ambiente no `command` do seu `~/.
 | `STATUSLINE_SEP`   | Separador entre seções (padrão `\|`), ex. `STATUSLINE_SEP=" • "`       |
 | `STATUSLINE_ORDER` | Ordem custom das seções, chaves separadas por vírgula: `model,git,context,session,weekly,cost` |
 | `STATUSLINE_THEME` | `dark` (padrão) ou `light` (cores pra fundo claro)                     |
+| `STATUSLINE_WIDTH` | Força a largura usada na quebra de linha. Vazio = detecta (`COLUMNS`/`tput`); `0` = nunca quebra |
+
+As seções quebram em múltiplas linhas quando não cabem na largura do terminal. Use `STATUSLINE_WIDTH=0` pra manter tudo numa linha só, ou um número pra sobrescrever a largura detectada.
 
 ## ⚙️ Como funciona
 

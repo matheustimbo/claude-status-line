@@ -129,6 +129,9 @@ The status line is configured via environment variables in the `command` of your
 | `STATUSLINE_SEP`   | Separator between sections (default `\|`), e.g. `STATUSLINE_SEP=" • "` |
 | `STATUSLINE_ORDER` | Custom section order, comma-separated keys: `model,git,context,session,weekly,cost` |
 | `STATUSLINE_THEME` | `dark` (default) or `light` (colors tuned for light backgrounds)       |
+| `STATUSLINE_WIDTH` | Force the width used for line wrapping. Empty = auto-detect (`COLUMNS`/`tput`); `0` = never wrap |
+
+Sections wrap onto multiple lines when they don't fit the terminal width. Set `STATUSLINE_WIDTH=0` to keep everything on a single line, or to a number to override the detected width.
 
 ## ⚙️ How it works
 

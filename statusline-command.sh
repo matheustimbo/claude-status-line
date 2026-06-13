@@ -20,6 +20,7 @@ CONTEXT_WARN_AT=${CONTEXT_WARN_AT:-80}      # limiar do aviso (%)
 STATUSLINE_SEP=${STATUSLINE_SEP:-|}         # separador entre seções
 STATUSLINE_ORDER=${STATUSLINE_ORDER:-}      # ordem custom (csv de chaves); vazio = padrão
 STATUSLINE_THEME=${STATUSLINE_THEME:-}      # vazio/"dark" = atual; "light" = cores p/ fundo claro
+STATUSLINE_WIDTH=${STATUSLINE_WIDTH:-}      # largura p/ quebra de linha; vazio = detecta (COLUMNS/tput)
 
 # Tema de cores (códigos ANSI). color_pct (verde/amarelo/vermelho) é universal.
 if [ "$STATUSLINE_THEME" = "light" ]; then
@@ -242,11 +243,41 @@ for key in $order; do
   [ -n "$seg" ] && parts+=("$seg")
 done
 
-# Join com separador configurável
-if [ "${#parts[@]}" -gt 0 ]; then
-  printf '%s' "${parts[0]}"
-  for ((i=1; i<${#parts[@]}; i++)); do
-    printf ' \033[%sm%s\033[0m %s' "$C_DIM" "$STATUSLINE_SEP" "${parts[$i]}"
-  done
+# Largura visível de uma string (sem códigos ANSI)
+vislen() {
+  local s
+  s=$(printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g')
+  printf '%s' "${#s}"
+}
+
+# Largura do terminal para a quebra de linha (0 = não quebra)
+width="$STATUSLINE_WIDTH"
+if [ -z "$width" ]; then
+  if [ "${COLUMNS:-0}" -gt 0 ] 2>/dev/null; then
+    width="$COLUMNS"
+  else
+    width=$(tput cols 2>/dev/null || echo 0)
+  fi
 fi
-printf '\n'
+[ -z "$width" ] && width=0
+
+sep=$(printf ' \033[%sm%s\033[0m ' "$C_DIM" "$STATUSLINE_SEP")
+sep_len=$(( $(vislen "$sep") ))
+
+# Junta as seções, quebrando linha quando não couber na largura
+out=""
+line=""
+line_len=0
+for seg in "${parts[@]}"; do
+  seg_len=$(vislen "$seg")
+  if [ -z "$line" ]; then
+    line="$seg"; line_len="$seg_len"
+  elif [ "$width" -gt 0 ] && [ $((line_len + sep_len + seg_len)) -gt "$width" ]; then
+    out="$out$line"$'\n'
+    line="$seg"; line_len="$seg_len"
+  else
+    line="$line$sep$seg"; line_len=$((line_len + sep_len + seg_len))
+  fi
+done
+out="$out$line"
+printf '%s\n' "$out"
