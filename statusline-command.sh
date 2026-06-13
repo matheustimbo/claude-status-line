@@ -11,6 +11,9 @@ effort=$(echo "$input" | jq -r '.effort.level // empty')
 # Context window
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 
+# Diretorio atual (para info de git)
+cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
+
 # Rate limits
 five_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
 five_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
@@ -51,6 +54,26 @@ fmt_reset() {
   fi
 }
 
+# Branch e worktree do git
+git_branch=""
+git_worktree=""
+if [ -n "$cwd" ] && [ -d "$cwd" ]; then
+  git_branch=$(git -C "$cwd" symbolic-ref --short HEAD 2>/dev/null)
+  if [ -z "$git_branch" ]; then
+    # HEAD destacado: usa o hash curto
+    git_branch=$(git -C "$cwd" rev-parse --short HEAD 2>/dev/null)
+  fi
+  # Nome da worktree atual (basename do topo da worktree)
+  wt_top=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)
+  if [ -n "$wt_top" ]; then
+    # Mostra a worktree apenas se nao for a principal
+    main_top=$(git -C "$cwd" worktree list 2>/dev/null | head -n1 | awk '{print $1}')
+    if [ -n "$main_top" ] && [ "$wt_top" != "$main_top" ]; then
+      git_worktree=$(basename "$wt_top")
+    fi
+  fi
+fi
+
 parts=()
 
 # Modelo (+ esforço atual)
@@ -66,6 +89,15 @@ if [ -n "$effort" ]; then
   parts+=("$(printf '\033[35m%s\033[0m \033[90m(esforço %s)\033[0m' "$model" "$effort_str")")
 else
   parts+=("$(printf '\033[35m%s\033[0m' "$model")")
+fi
+
+# Branch / worktree
+if [ -n "$git_branch" ]; then
+  branch_label=$(printf '\033[36m\xf0\x9f\x8c\xbf %s\033[0m' "$git_branch")
+  if [ -n "$git_worktree" ]; then
+    branch_label="$branch_label$(printf ' \033[90m(\xf0\x9f\x93\x81 %s)\033[0m' "$git_worktree")"
+  fi
+  parts+=("$branch_label")
 fi
 
 # Contexto

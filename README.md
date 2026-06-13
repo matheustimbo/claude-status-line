@@ -15,11 +15,13 @@
 
 ---
 
-Shows the **active model**, **current effort level**, **context window usage**, and **rate limits** (5-hour session and 7-day weekly), with colors and time until reset:
+Shows the **active model**, **current effort level**, **current git branch and worktree**, **context window usage**, and **rate limits** (5-hour session and 7-day weekly), with colors and time until reset:
 
 ```
-Opus 4.7 (1M context) (esforço alto) | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
+Opus 4.7 (1M context) (esforço alto) | 🌿 main | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
 ```
+
+The branch shows the worktree name in parentheses when you're in a secondary worktree (e.g. `🌿 feature-x (📁 my-worktree)`). No special font required — it works in any terminal.
 
 🟢 green (<50%) · 🟡 yellow (<80%) · 🔴 red (≥80%)
 
@@ -29,6 +31,7 @@ Opus 4.7 (1M context) (esforço alto) | Contexto: 6% | Sessao: 13% (reseta em 3h
 
 - ⏱️ **Never get surprised by a rate limit again** — see session and weekly usage in real time, with a countdown to reset
 - 🧠 **Context always visible** — know when it's time to compact
+- 🌿 **Branch & worktree at a glance** — always know which branch (and worktree) you're working in
 - 🪶 **Zero cost** — no API, no tokens; everything rendered locally, negligible CPU even with 10+ windows open
 
 ## 📦 Requirements
@@ -80,7 +83,7 @@ REFRESH_INTERVAL=10 curl -fsSL https://raw.githubusercontent.com/matheustimbo/cl
 
 ## ⚙️ How it works
 
-Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `context_window`, and `rate_limits`. The script parses it with `jq` and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
+Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `workspace`, `context_window`, and `rate_limits`. The script parses it with `jq` (and shells out to `git` for the branch/worktree) and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
 
 ## 📄 License
 

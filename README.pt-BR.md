@@ -15,11 +15,13 @@
 
 ---
 
-Mostra **modelo**, **nível de esforço**, **uso de contexto** e **rate limits** (sessão de 5h e semanal de 7d), com cores e tempo até o reset:
+Mostra **modelo**, **nível de esforço**, **branch e worktree atual do git**, **uso de contexto** e **rate limits** (sessão de 5h e semanal de 7d), com cores e tempo até o reset:
 
 ```
-Opus 4.7 (1M context) (esforço alto) | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
+Opus 4.7 (1M context) (esforço alto) | 🌿 main | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
 ```
+
+A branch mostra o nome da worktree entre parênteses quando você está numa worktree secundária (ex: `🌿 feature-x (📁 minha-worktree)`). Não precisa de fonte especial — funciona em qualquer terminal.
 
 🟢 verde (<50%) · 🟡 amarelo (<80%) · 🔴 vermelho (≥80%)
 
@@ -27,6 +29,7 @@ Opus 4.7 (1M context) (esforço alto) | Contexto: 6% | Sessao: 13% (reseta em 3h
 
 - ⏱️ **Nunca mais seja surpreendido pelo rate limit** — veja sessão e semanal em tempo real, com countdown até o reset
 - 🧠 **Contexto sempre visível** — saiba quando está na hora de compactar
+- 🌿 **Branch e worktree à vista** — sempre saiba em qual branch (e worktree) você está
 - 🪶 **Zero custo** — sem API, sem tokens; tudo renderizado localmente, CPU desprezível mesmo com 10+ janelas abertas
 - 🇧🇷 **Em português**, do jeito que a gente fala
 
@@ -79,7 +82,7 @@ REFRESH_INTERVAL=10 curl -fsSL https://raw.githubusercontent.com/matheustimbo/cl
 
 ## ⚙️ Como funciona
 
-O Claude Code envia um JSON via stdin pra cada execução da status line, contendo `model`, `effort`, `context_window` e `rate_limits`. O script lê com `jq` e formata em PT-BR com ANSI colors. Simples assim — um único arquivo bash, fácil de customizar.
+O Claude Code envia um JSON via stdin pra cada execução da status line, contendo `model`, `effort`, `workspace`, `context_window` e `rate_limits`. O script lê com `jq` (e chama o `git` pra branch/worktree) e formata em PT-BR com ANSI colors. Simples assim — um único arquivo bash, fácil de customizar.
 
 ## 📄 Licença
 
