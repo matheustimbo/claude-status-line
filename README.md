@@ -2,7 +2,7 @@
 
 # 📊 claude-status-line
 
-**A Portuguese (BR) status line for [Claude Code](https://claude.com/claude-code)** — always know how much of your rate limits is left, without leaving the terminal.
+**A Portuguese (BR) status line for [Claude Code](https://claude.com/claude-code)** — always know your model, git branch/worktree, and how much of your rate limits is left, without leaving the terminal.
 
 [![One-line install](https://img.shields.io/badge/install-one%20line-brightgreen)](#-one-line-install)
 [![Shell](https://img.shields.io/badge/built%20with-bash%20%2B%20jq-blue)](statusline-command.sh)
@@ -18,14 +18,20 @@
 Shows the **active model**, **current effort level**, **current git branch and worktree**, **context window usage**, and **rate limits** (5-hour session and 7-day weekly), with colors and time until reset:
 
 ```
-Opus 4.7 (1M context) (esforço alto) | 🌿 main | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
+Opus 4.8 (1M context) (esforço alto) | 🌿 main | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
 ```
 
-The branch shows the worktree name in parentheses when you're in a secondary worktree (e.g. `🌿 feature-x (📁 my-worktree)`). No special font required — it works in any terminal.
+In a secondary git worktree, the worktree name (📁) appears in parentheses next to the branch (🌿):
+
+```
+Opus 4.8 (1M context) (esforço alto) | 🌿 feature-x (📁 my-worktree) | Contexto: 6% | Sessao: 13% (reseta em 3h 19min) | Semanal: 18% (reseta em 5d 13h)
+```
+
+No special font required — it works in any terminal.
 
 🟢 green (<50%) · 🟡 yellow (<80%) · 🔴 red (≥80%)
 
-> Labels are in Portuguese (`Contexto`, `Sessao`, `Semanal`, `reseta em`). If you want them in English, edit `statusline-command.sh` directly — it's a small bash script.
+> Labels follow your system language (Portuguese or English), and fall back to English otherwise. Force one with `STATUSLINE_LANG` — see [Configuration](#%EF%B8%8F-configuration).
 
 ## ✨ Why?
 
@@ -80,6 +86,32 @@ REFRESH_INTERVAL=10 curl -fsSL https://raw.githubusercontent.com/matheustimbo/cl
 3. Restart Claude Code.
 
 </details>
+
+## 🎛️ Configuration
+
+The status line is configured via environment variables in the `command` of your `~/.claude/settings.json`. Chain as many as you like:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "STATUSLINE_LANG=en SHOW_WEEKLY=0 bash ~/.claude/statusline-command.sh"
+  }
+}
+```
+
+**Language** — `STATUSLINE_LANG`: `pt` or `en`. Defaults to your system language (from `LANG`/`LC_*` or macOS `AppleLocale`), falling back to English if it isn't supported.
+
+**Toggle sections** — set any of these to `0` to hide it (all shown by default):
+
+| Variable        | Section                        |
+| --------------- | ------------------------------ |
+| `SHOW_MODEL`    | Model name                     |
+| `SHOW_EFFORT`   | Effort level (next to model)   |
+| `SHOW_GIT`      | Git branch / worktree          |
+| `SHOW_CONTEXT`  | Context window usage           |
+| `SHOW_SESSION`  | 5-hour session rate limit      |
+| `SHOW_WEEKLY`   | 7-day weekly rate limit        |
 
 ## ⚙️ How it works
 

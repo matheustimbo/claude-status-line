@@ -1,5 +1,38 @@
 #!/usr/bin/env bash
 # Claude Code status line — informações de uso em PT-BR
+#
+# Toggle de seções: defina como 0 para esconder (padrão: todas ligadas).
+# Ex. no settings.json: "command": "SHOW_WEEKLY=0 bash ~/.claude/statusline-command.sh"
+SHOW_MODEL=${SHOW_MODEL:-1}
+SHOW_EFFORT=${SHOW_EFFORT:-1}
+SHOW_GIT=${SHOW_GIT:-1}
+SHOW_CONTEXT=${SHOW_CONTEXT:-1}
+SHOW_SESSION=${SHOW_SESSION:-1}
+SHOW_WEEKLY=${SHOW_WEEKLY:-1}
+
+# Idioma dos rótulos: "pt" ou "en".
+# Padrão: idioma do sistema; se não for suportado, cai pra "en".
+# Para forçar, no settings.json: "command": "STATUSLINE_LANG=pt bash ~/.claude/statusline-command.sh"
+detect_lang() {
+  local sys="${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}"
+  if [ -z "$sys" ] && command -v defaults >/dev/null 2>&1; then
+    sys=$(defaults read -g AppleLocale 2>/dev/null)
+  fi
+  case "$sys" in
+    pt*) printf 'pt' ;;
+    *)   printf 'en' ;;
+  esac
+}
+STATUSLINE_LANG=${STATUSLINE_LANG:-$(detect_lang)}
+
+if [ "$STATUSLINE_LANG" = "en" ]; then
+  L_EFFORT="effort"; L_CONTEXT="Context"; L_SESSION="Session"; L_WEEKLY="Weekly"
+  L_RESET="resets in"; L_NOW="now"
+else
+  L_EFFORT="esforço"; L_CONTEXT="Contexto"; L_SESSION="Sessao"; L_WEEKLY="Semanal"
+  L_RESET="reseta em"; L_NOW="agora"
+fi
+
 input=$(cat)
 
 # Model
@@ -39,7 +72,7 @@ fmt_reset() {
   local now=$(date +%s)
   local diff=$((reset_ts - now))
   if [ "$diff" -le 0 ]; then
-    printf 'agora'
+    printf '%s' "$L_NOW"
     return
   fi
   local days=$((diff / 86400))
@@ -77,22 +110,35 @@ fi
 parts=()
 
 # Modelo (+ esforço atual)
-if [ -n "$effort" ]; then
-  case "$effort" in
-    low) effort_str="baixo" ;;
-    medium) effort_str="médio" ;;
-    high) effort_str="alto" ;;
-    xhigh) effort_str="extra-alto" ;;
-    max) effort_str="máximo" ;;
-    *) effort_str="$effort" ;;
-  esac
-  parts+=("$(printf '\033[35m%s\033[0m \033[90m(esforço %s)\033[0m' "$model" "$effort_str")")
-else
-  parts+=("$(printf '\033[35m%s\033[0m' "$model")")
+if [ "$SHOW_MODEL" != "0" ]; then
+  if [ "$SHOW_EFFORT" != "0" ] && [ -n "$effort" ]; then
+    if [ "$STATUSLINE_LANG" = "en" ]; then
+      case "$effort" in
+        low) effort_str="low" ;;
+        medium) effort_str="medium" ;;
+        high) effort_str="high" ;;
+        xhigh) effort_str="extra-high" ;;
+        max) effort_str="max" ;;
+        *) effort_str="$effort" ;;
+      esac
+    else
+      case "$effort" in
+        low) effort_str="baixo" ;;
+        medium) effort_str="médio" ;;
+        high) effort_str="alto" ;;
+        xhigh) effort_str="extra-alto" ;;
+        max) effort_str="máximo" ;;
+        *) effort_str="$effort" ;;
+      esac
+    fi
+    parts+=("$(printf '\033[35m%s\033[0m \033[90m(%s %s)\033[0m' "$model" "$L_EFFORT" "$effort_str")")
+  else
+    parts+=("$(printf '\033[35m%s\033[0m' "$model")")
+  fi
 fi
 
 # Branch / worktree
-if [ -n "$git_branch" ]; then
+if [ "$SHOW_GIT" != "0" ] && [ -n "$git_branch" ]; then
   branch_label=$(printf '\033[36m\xf0\x9f\x8c\xbf %s\033[0m' "$git_branch")
   if [ -n "$git_worktree" ]; then
     branch_label="$branch_label$(printf ' \033[90m(\xf0\x9f\x93\x81 %s)\033[0m' "$git_worktree")"
@@ -101,26 +147,26 @@ if [ -n "$git_branch" ]; then
 fi
 
 # Contexto
-if [ -n "$used_pct" ]; then
-  parts+=("$(printf 'Contexto: ')$(color_pct "$used_pct")")
+if [ "$SHOW_CONTEXT" != "0" ] && [ -n "$used_pct" ]; then
+  parts+=("$(printf '%s: ' "$L_CONTEXT")$(color_pct "$used_pct")")
 fi
 
 # Sessao (5h rate limit)
-if [ -n "$five_pct" ]; then
+if [ "$SHOW_SESSION" != "0" ] && [ -n "$five_pct" ]; then
   reset_str=$(fmt_reset "$five_reset")
-  label="Sessao: $(color_pct "$five_pct")"
+  label="$L_SESSION: $(color_pct "$five_pct")"
   if [ -n "$reset_str" ]; then
-    label="$label$(printf ' \033[90m(reseta em %s)\033[0m' "$reset_str")"
+    label="$label$(printf ' \033[90m(%s %s)\033[0m' "$L_RESET" "$reset_str")"
   fi
   parts+=("$label")
 fi
 
 # Semanal (7d rate limit)
-if [ -n "$seven_pct" ]; then
+if [ "$SHOW_WEEKLY" != "0" ] && [ -n "$seven_pct" ]; then
   reset_str=$(fmt_reset "$seven_reset")
-  label="Semanal: $(color_pct "$seven_pct")"
+  label="$L_WEEKLY: $(color_pct "$seven_pct")"
   if [ -n "$reset_str" ]; then
-    label="$label$(printf ' \033[90m(reseta em %s)\033[0m' "$reset_str")"
+    label="$label$(printf ' \033[90m(%s %s)\033[0m' "$L_RESET" "$reset_str")"
   fi
   parts+=("$label")
 fi
