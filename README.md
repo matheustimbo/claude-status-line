@@ -118,7 +118,6 @@ The status line is configured via environment variables in the `command` of your
 | Variable             | Section                                              |
 | -------------------- | ---------------------------------------------------- |
 | `SHOW_COST`          | Session cost in USD (e.g. `$0.42`)                   |
-| `SHOW_OUTPUT_STYLE`  | Active output style (e.g. `🎨 default`)              |
 | `SHOW_GIT_DIRTY`     | Appends `*` to the branch when there are uncommitted changes |
 | `SHOW_GIT_AHEAD`     | Ahead/behind vs upstream (e.g. `↑2 ↓1`)              |
 | `SHOW_CONTEXT_WARN`  | Prefixes a `⚠️` when context usage is high            |
@@ -129,12 +128,12 @@ The status line is configured via environment variables in the `command` of your
 | Variable           | Effect                                                                 |
 | ------------------ | ---------------------------------------------------------------------- |
 | `STATUSLINE_SEP`   | Separator between sections (default `\|`), e.g. `STATUSLINE_SEP=" • "` |
-| `STATUSLINE_ORDER` | Custom section order, comma-separated keys: `model,git,context,session,weekly,cost,style` |
+| `STATUSLINE_ORDER` | Custom section order, comma-separated keys: `model,git,context,session,weekly,cost` |
 | `STATUSLINE_THEME` | `dark` (default) or `light` (colors tuned for light backgrounds)       |
 
 ## ⚙️ How it works
 
-Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `workspace`, `context_window`, `rate_limits`, `cost`, and `output_style`. The script parses it with `jq` (and shells out to `git` for the branch/worktree) and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
+Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `workspace`, `context_window`, `rate_limits`, and `cost`. The script parses it with `jq` (and shells out to `git` for the branch/worktree) and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
 
 ## 📄 License
 

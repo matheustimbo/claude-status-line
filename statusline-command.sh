@@ -12,7 +12,6 @@ SHOW_WEEKLY=${SHOW_WEEKLY:-1}
 
 # Seções/recursos extras — desligados por padrão.
 SHOW_COST=${SHOW_COST:-0}                   # custo da sessão ($.cost.total_cost_usd)
-SHOW_OUTPUT_STYLE=${SHOW_OUTPUT_STYLE:-0}   # .output_style.name
 SHOW_GIT_DIRTY=${SHOW_GIT_DIRTY:-0}         # marca '*' quando há mudanças não commitadas
 SHOW_GIT_AHEAD=${SHOW_GIT_AHEAD:-0}         # ↑N ↓N vs upstream
 SHOW_CONTEXT_WARN=${SHOW_CONTEXT_WARN:-0}   # ⚠️ quando contexto >= limiar
@@ -64,9 +63,8 @@ effort=$(echo "$input" | jq -r '.effort.level // empty')
 # Context window
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 
-# Custo / output style
+# Custo
 cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
-out_style=$(echo "$input" | jq -r '.output_style.name // empty')
 
 # Diretorio atual (para info de git)
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
@@ -158,7 +156,6 @@ seg_context=""
 seg_session=""
 seg_weekly=""
 seg_cost=""
-seg_style=""
 
 # Modelo (+ esforço atual)
 if [ "$SHOW_MODEL" != "0" ]; then
@@ -232,13 +229,8 @@ if [ "$SHOW_COST" != "0" ] && [ -n "$cost" ]; then
   seg_cost=$(LC_ALL=C awk -v c="$C_DIM" -v v="$cost" 'BEGIN{printf "\033[%sm$%.2f\033[0m", c, v}')
 fi
 
-# Output style
-if [ "$SHOW_OUTPUT_STYLE" != "0" ] && [ -n "$out_style" ]; then
-  seg_style=$(printf '\033[%sm\xf0\x9f\x8e\xa8 %s\033[0m' "$C_DIM" "$out_style")
-fi
-
 # Ordena e junta -------------------------------------------------------------
-default_order="model git context session weekly cost style"
+default_order="model git context session weekly cost"
 order="${STATUSLINE_ORDER:-$default_order}"
 order="${order//,/ }"
 
@@ -251,7 +243,6 @@ for key in $order; do
     session) seg="$seg_session" ;;
     weekly)  seg="$seg_weekly" ;;
     cost)    seg="$seg_cost" ;;
-    style)   seg="$seg_style" ;;
     *)       seg="" ;;
   esac
   [ -n "$seg" ] && parts+=("$seg")
