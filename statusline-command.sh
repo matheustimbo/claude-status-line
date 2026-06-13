@@ -243,11 +243,14 @@ for key in $order; do
   [ -n "$seg" ] && parts+=("$seg")
 done
 
-# Largura visível de uma string (sem códigos ANSI)
+# Largura visível (em colunas) de uma string, sem códigos ANSI.
+# Os emojis 🌿 e 📁 contam como 1 code point mas ocupam 2 colunas, então somamos 1 por ocorrência.
 vislen() {
-  local s
-  s=$(printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g')
-  printf '%s' "${#s}"
+  local s; s=$(printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g')
+  local base=${#s}
+  local leaf=$'\xf0\x9f\x8c\xbf' fold=$'\xf0\x9f\x93\x81'
+  local t1=${s//"$leaf"/} t2=${s//"$fold"/}
+  printf '%s' $(( base + (base - ${#t1}) + (base - ${#t2}) ))
 }
 
 # Largura do terminal para a quebra de linha (0 = não quebra)
@@ -260,6 +263,9 @@ if [ -z "$width" ]; then
   fi
 fi
 [ -z "$width" ] && width=0
+# margem de 1 coluna: a largura de emoji varia entre terminais e o truncamento
+# pode reservar uma coluna — evita cortar bem no limite.
+[ "$width" -gt 0 ] 2>/dev/null && width=$((width - 1))
 
 sep=$(printf ' \033[%sm%s\033[0m ' "$C_DIM" "$STATUSLINE_SEP")
 sep_len=$(( $(vislen "$sep") ))
