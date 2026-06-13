@@ -118,7 +118,6 @@ The status line is configured via environment variables in the `command` of your
 | Variable             | Section                                              |
 | -------------------- | ---------------------------------------------------- |
 | `SHOW_COST`          | Session cost in USD (e.g. `$0.42`)                   |
-| `SHOW_GIT_DIRTY`     | Appends `*` to the branch when there are uncommitted changes |
 | `SHOW_GIT_AHEAD`     | Ahead/behind vs upstream (e.g. `↑2 ↓1`)              |
 | `SHOW_CONTEXT_WARN`  | Prefixes a `⚠️` when context usage is high            |
 | `CONTEXT_WARN_AT`    | Threshold (%) for the context warning (default `80`) |

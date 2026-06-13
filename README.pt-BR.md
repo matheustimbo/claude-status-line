@@ -117,7 +117,6 @@ A status line é configurada por variáveis de ambiente no `command` do seu `~/.
 | Variável             | Seção                                                |
 | -------------------- | ---------------------------------------------------- |
 | `SHOW_COST`          | Custo da sessão em USD (ex. `$0.42`)                 |
-| `SHOW_GIT_DIRTY`     | Adiciona `*` na branch quando há mudanças não commitadas |
 | `SHOW_GIT_AHEAD`     | Ahead/behind vs upstream (ex. `↑2 ↓1`)               |
 | `SHOW_CONTEXT_WARN`  | Prefixa `⚠️` quando o contexto está alto              |
 | `CONTEXT_WARN_AT`    | Limiar (%) do aviso de contexto (padrão `80`)        |

@@ -12,7 +12,6 @@ SHOW_WEEKLY=${SHOW_WEEKLY:-1}
 
 # Seções/recursos extras — desligados por padrão.
 SHOW_COST=${SHOW_COST:-0}                   # custo da sessão ($.cost.total_cost_usd)
-SHOW_GIT_DIRTY=${SHOW_GIT_DIRTY:-0}         # marca '*' quando há mudanças não commitadas
 SHOW_GIT_AHEAD=${SHOW_GIT_AHEAD:-0}         # ↑N ↓N vs upstream
 SHOW_CONTEXT_WARN=${SHOW_CONTEXT_WARN:-0}   # ⚠️ quando contexto >= limiar
 CONTEXT_WARN_AT=${CONTEXT_WARN_AT:-80}      # limiar do aviso (%)
@@ -112,7 +111,6 @@ fmt_reset() {
 # Branch e worktree do git (+ dirty / ahead-behind, opcionais)
 git_branch=""
 git_worktree=""
-git_dirty=""
 git_ahead_behind=""
 if [ -n "$cwd" ] && [ -d "$cwd" ]; then
   git_branch=$(git -C "$cwd" symbolic-ref --short HEAD 2>/dev/null)
@@ -129,10 +127,6 @@ if [ -n "$cwd" ] && [ -d "$cwd" ]; then
       if [ -n "$main_top" ] && [ "$wt_top" != "$main_top" ]; then
         git_worktree=$(basename "$wt_top")
       fi
-    fi
-    # Repo com mudanças não commitadas
-    if [ "$SHOW_GIT_DIRTY" != "0" ] && [ -n "$(git -C "$cwd" status --porcelain 2>/dev/null)" ]; then
-      git_dirty="*"
     fi
     # Ahead/behind vs upstream
     if [ "$SHOW_GIT_AHEAD" != "0" ]; then
@@ -187,7 +181,7 @@ fi
 
 # Branch / worktree
 if [ "$SHOW_GIT" != "0" ] && [ -n "$git_branch" ]; then
-  seg_git=$(printf '\033[%sm\xf0\x9f\x8c\xbf %s%s\033[0m' "$C_GIT" "$git_branch" "$git_dirty")
+  seg_git=$(printf '\033[%sm\xf0\x9f\x8c\xbf %s\033[0m' "$C_GIT" "$git_branch")
   if [ -n "$git_ahead_behind" ]; then
     seg_git="$seg_git$(printf ' \033[%sm%b\033[0m' "$C_DIM" "$git_ahead_behind")"
   fi
