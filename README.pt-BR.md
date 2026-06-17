@@ -118,7 +118,7 @@ A status line é configurada por variáveis de ambiente no `command` do seu `~/.
 | -------------------- | ---------------------------------------------------- |
 | `SHOW_COST`          | Custo da sessão em USD (ex. `$0.42`)                 |
 | `SHOW_GIT_AHEAD`     | Ahead/behind vs upstream (ex. `↑2 ↓1`)               |
-| `SHOW_CONTEXT_WARN`  | Prefixa `⚠️` quando o contexto está alto              |
+| `SHOW_CONTEXT_WARN`  | Prefixa `⚠` quando o contexto está alto              |
 | `CONTEXT_WARN_AT`    | Limiar (%) do aviso de contexto (padrão `80`)        |
 
 **Aparência** — os defaults preservam o visual atual:

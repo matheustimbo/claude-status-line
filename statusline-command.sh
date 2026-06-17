@@ -13,7 +13,7 @@ SHOW_WEEKLY=${SHOW_WEEKLY:-1}
 # Seções/recursos extras — desligados por padrão.
 SHOW_COST=${SHOW_COST:-0}                   # custo da sessão ($.cost.total_cost_usd)
 SHOW_GIT_AHEAD=${SHOW_GIT_AHEAD:-0}         # ↑N ↓N vs upstream
-SHOW_CONTEXT_WARN=${SHOW_CONTEXT_WARN:-0}   # ⚠️ quando contexto >= limiar
+SHOW_CONTEXT_WARN=${SHOW_CONTEXT_WARN:-0}   # ⚠ quando contexto >= limiar
 CONTEXT_WARN_AT=${CONTEXT_WARN_AT:-80}      # limiar do aviso (%)
 
 # Aparência — defaults preservam o visual atual.
@@ -196,7 +196,10 @@ if [ "$SHOW_CONTEXT" != "0" ] && [ -n "$used_pct" ]; then
   warn=""
   if [ "$SHOW_CONTEXT_WARN" != "0" ]; then
     used_int=$(printf "%.0f" "$used_pct")
-    [ "$used_int" -ge "$CONTEXT_WARN_AT" ] 2>/dev/null && warn="\xe2\x9a\xa0\xef\xb8\x8f "
+    # ⚠ = U+26A0 puro (largura 1). NÃO usar o seletor de variação U+FE0F (\xef\xb8\x8f):
+    # ele faz o host (Claude Code) contar o glifo como 2 colunas enquanto o terminal
+    # (xterm.js/Tabby) conta 1, dessincronizando o cursor e corrompendo o texto seguinte.
+    [ "$used_int" -ge "$CONTEXT_WARN_AT" ] 2>/dev/null && warn="\xe2\x9a\xa0 "
   fi
   seg_context="$(printf '%b%s: ' "$warn" "$L_CONTEXT")$(color_pct "$used_pct")"
 fi
