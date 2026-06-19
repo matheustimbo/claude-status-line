@@ -133,9 +133,20 @@ The status line is configured via environment variables in the `command` of your
 
 Sections wrap onto multiple lines when they don't fit the terminal width. Set `STATUSLINE_WIDTH=0` to keep everything on a single line, or to a number to override the detected width.
 
+**Account switching** — when you switch accounts with `/login` without restarting, Claude Code keeps sending the *previous* account's rate limits to the status line. To fix this, the script detects the switch and fetches the active account's real rate limits from the API (using the OAuth token from your Keychain). Enabled by default; on by default and safe to leave on.
+
+| Variable          | Effect                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| `SHOW_LIVE_USAGE` | `1` (default) fetch live rate limits after an account switch; `0` keeps the old behavior |
+| `USAGE_TTL`       | Cache TTL in seconds for the live-usage fetch (default `60`)                             |
+
+> The live fetch only runs when an account switch is detected (never on the normal path), caches the result, talks only to `api.anthropic.com`, and falls back to a `⚠ account switched — restart` hint if anything fails. The OAuth token is never written to disk or passed on the command line. The usage endpoint is experimental and may change.
+
 ## ⚙️ How it works
 
 Claude Code pipes a JSON payload via stdin to the status line command on every render, containing `model`, `effort`, `workspace`, `context_window`, `rate_limits`, and `cost`. The script parses it with `jq` (and shells out to `git` for the branch/worktree) and prints a formatted line with ANSI colors. That's it — a single bash file, easy to customize.
+
+When an account switch is detected mid-session, it additionally reads the active account from `~/.claude.json` and fetches that account's rate limits from `GET /api/oauth/usage`, caching them under `~/.claude/statusline-state/` (private, `0700`).
 
 ## 📄 License
 

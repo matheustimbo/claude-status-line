@@ -132,9 +132,20 @@ A status line é configurada por variáveis de ambiente no `command` do seu `~/.
 
 As seções quebram em múltiplas linhas quando não cabem na largura do terminal. Use `STATUSLINE_WIDTH=0` pra manter tudo numa linha só, ou um número pra sobrescrever a largura detectada.
 
+**Troca de conta** — ao trocar de conta com `/login` sem reiniciar, o Claude Code continua enviando os rate limits da conta *anterior* pra status line. Pra resolver, o script detecta a troca e busca os rate limits reais da conta ativa na API (usando o token OAuth do seu Keychain). Ligado por padrão e seguro de deixar ligado.
+
+| Variável          | Efeito                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `SHOW_LIVE_USAGE` | `1` (padrão) busca os rate limits ao vivo após troca de conta; `0` mantém o comportamento antigo |
+| `USAGE_TTL`       | TTL do cache (segundos) da busca ao vivo (padrão `60`)                                        |
+
+> A busca ao vivo só roda quando uma troca é detectada (nunca no caminho normal), faz cache do resultado, fala só com `api.anthropic.com` e cai num aviso `⚠ conta trocada — reinicie` se algo falhar. O token OAuth nunca é gravado em disco nem passado na linha de comando. O endpoint de uso é experimental e pode mudar.
+
 ## ⚙️ Como funciona
 
 O Claude Code envia um JSON via stdin pra cada execução da status line, contendo `model`, `effort`, `workspace`, `context_window`, `rate_limits` e `cost`. O script lê com `jq` (e chama o `git` pra branch/worktree) e formata em PT-BR ou inglês com ANSI colors. Simples assim — um único arquivo bash, fácil de customizar.
+
+Quando detecta troca de conta no meio da sessão, ele também lê a conta ativa de `~/.claude.json` e busca os rate limits dela em `GET /api/oauth/usage`, com cache em `~/.claude/statusline-state/` (privado, `0700`).
 
 ## 📄 Licença
 

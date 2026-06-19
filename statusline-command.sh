@@ -16,6 +16,12 @@ SHOW_GIT_AHEAD=${SHOW_GIT_AHEAD:-0}         # ↑N ↓N vs upstream
 SHOW_CONTEXT_WARN=${SHOW_CONTEXT_WARN:-0}   # ⚠ quando contexto >= limiar
 CONTEXT_WARN_AT=${CONTEXT_WARN_AT:-80}      # limiar do aviso (%)
 
+# Ao trocar de conta (/login) sem reiniciar, o Claude Code segue enviando os rate
+# limits da conta antiga. Com isto ligado, ao detectar a troca o script busca os
+# rate limits reais da conta ativa direto na API (endpoint experimental, com fallback).
+SHOW_LIVE_USAGE=${SHOW_LIVE_USAGE:-1}       # 0 desliga a detecção/busca e mantém o comportamento atual
+USAGE_TTL=${USAGE_TTL:-60}                  # TTL (s) do cache da busca de uso na API
+
 # Aparência — defaults preservam o visual atual.
 STATUSLINE_SEP=${STATUSLINE_SEP:-|}         # separador entre seções
 STATUSLINE_ORDER=${STATUSLINE_ORDER:-}      # ordem custom (csv de chaves); vazio = padrão
@@ -46,10 +52,10 @@ STATUSLINE_LANG=${STATUSLINE_LANG:-$(detect_lang)}
 
 if [ "$STATUSLINE_LANG" = "en" ]; then
   L_EFFORT="effort"; L_CONTEXT="Context"; L_SESSION="Session"; L_WEEKLY="Weekly"
-  L_RESET="resets in"; L_NOW="now"
+  L_RESET="resets in"; L_NOW="now"; L_STALE_ACCOUNT="account switched — restart"
 else
   L_EFFORT="esforço"; L_CONTEXT="Contexto"; L_SESSION="Sessao"; L_WEEKLY="Semanal"
-  L_RESET="reseta em"; L_NOW="agora"
+  L_RESET="reseta em"; L_NOW="agora"; L_STALE_ACCOUNT="conta trocada — reinicie"
 fi
 
 input=$(cat)
@@ -68,6 +74,9 @@ cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
 
 # Diretorio atual (para info de git)
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
+
+# ID da sessão (para detectar troca de conta dentro da mesma sessão)
+session_id=$(echo "$input" | jq -r '.session_id // .transcript_path // empty')
 
 # Rate limits
 five_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
@@ -109,6 +118,98 @@ fmt_reset() {
   fi
 }
 
+# Converte timestamp ISO 8601 (ex. 2026-06-19T16:20:00.830323+00:00) em epoch.
+# A API retorna sempre em UTC; pega os 19 chars 'YYYY-MM-DDTHH:MM:SS' e ignora
+# fração/offset (robusto p/ sufixos '.', 'Z', '+hh:mm' e '-hh:mm').
+iso_to_epoch() {
+  local b="${1:0:19}"
+  case "$b" in
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]) ;;
+    *) return ;;
+  esac
+  # BSD/macOS (date -j) com fallback p/ GNU/Linux (date -u -d). Ambos interpretam UTC.
+  date -j -u -f "%Y-%m-%dT%H:%M:%S" "$b" +%s 2>/dev/null \
+    || date -u -d "$b" +%s 2>/dev/null
+}
+
+# mtime de um arquivo em epoch. Tenta BSD ('stat -f %m'); se a saída não for
+# numérica (ex. no GNU, onde -f é "filesystem status"), cai p/ GNU ('stat -c %Y').
+# Só emite se o resultado for realmente numérico.
+file_mtime() {
+  local out
+  out=$(stat -f %m "$1" 2>/dev/null)
+  case "$out" in
+    ''|*[!0-9]*) out=$(stat -c %Y "$1" 2>/dev/null) ;;
+  esac
+  case "$out" in
+    ''|*[!0-9]*) return 1 ;;
+    *) printf '%s\n' "$out" ;;
+  esac
+}
+
+# Lê o access token OAuth da fonte mais válida (Keychain preferido; arquivo de
+# fallback). Só retorna um token cujo expiresAt ainda esteja no futuro.
+# Emite o token só se válido e no charset esperado (sk-ant-oat...), evitando
+# injeção na config do curl e tokens corrompidos.
+emit_token_if_valid() {
+  local tok="$1" exp="$2" now_ms="$3"
+  [ -z "$tok" ] && return 1
+  [ "${exp:-0}" -gt "$now_ms" ] 2>/dev/null || return 1
+  case "$tok" in
+    *[!A-Za-z0-9._-]*) return 1 ;;
+  esac
+  printf '%s' "$tok"
+}
+
+read_oauth_token() {
+  local now_ms kc tok exp f
+  now_ms=$(( $(date +%s) * 1000 ))
+  kc=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
+  if [ -n "$kc" ]; then
+    tok=$(printf '%s' "$kc" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
+    exp=$(printf '%s' "$kc" | jq -r '.claudeAiOauth.expiresAt // 0' 2>/dev/null)
+    emit_token_if_valid "$tok" "$exp" "$now_ms" && return
+  fi
+  f="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"
+  if [ -f "$f" ]; then
+    tok=$(jq -r '.claudeAiOauth.accessToken // empty' "$f" 2>/dev/null)
+    exp=$(jq -r '.claudeAiOauth.expiresAt // 0' "$f" 2>/dev/null)
+    emit_token_if_valid "$tok" "$exp" "$now_ms" && return
+  fi
+}
+
+# Busca o uso real da conta ativa na API (com cache TTL). Usa $state_dir, $USAGE_TTL.
+# Imprime "five_pct|five_iso|seven_pct|seven_iso" ou nada em caso de falha.
+get_live_usage() {
+  local uuid="$1" cache="$state_dir/usage-$1.json" now age resp tok base
+  now=$(date +%s)
+  if [ -f "$cache" ]; then
+    age=$(( now - $(file_mtime "$cache" 2>/dev/null || echo 0) ))
+    [ "$age" -lt "$USAGE_TTL" ] 2>/dev/null && resp=$(cat "$cache" 2>/dev/null)
+  fi
+  if [ -z "$resp" ]; then
+    tok=$(read_oauth_token)
+    [ -z "$tok" ] && return
+    # Host fixo de propósito: é um token de conta (assinatura). Não mandamos para
+    # um ANTHROPIC_BASE_URL arbitrário (ex. proxy de inferência) p/ evitar exfiltração.
+    base="https://api.anthropic.com"
+    # token via --config (stdin) p/ não vazar no ps
+    resp=$(printf 'header = "Authorization: Bearer %s"\n' "$tok" | curl -s --max-time 3 --config - \
+      -H "anthropic-beta: oauth-2025-04-20" -H "anthropic-version: 2023-06-01" \
+      -H "User-Agent: claude-cli-statusline" "$base/api/oauth/usage" 2>/dev/null)
+    printf '%s' "$resp" | jq -e '(.five_hour|type=="object") or (.seven_day|type=="object")' >/dev/null 2>&1 || return
+    # escrita atômica + permissão restrita (dado de conta/uso)
+    ( umask 077; printf '%s' "$resp" > "$cache.tmp.$$" 2>/dev/null ) && mv -f "$cache.tmp.$$" "$cache" 2>/dev/null
+  fi
+  printf '%s' "$resp" | jq -r '
+    def pct(x): (x | (tonumber? // null)) as $n
+      | if $n == null then "" elif $n <= 1 then ($n * 100) else $n end;
+    [ (pct(.five_hour.utilization) | tostring),
+      (.five_hour.resets_at // ""),
+      (pct(.seven_day.utilization) | tostring),
+      (.seven_day.resets_at // "") ] | join("|")' 2>/dev/null
+}
+
 # Branch e worktree do git (+ dirty / ahead-behind, opcionais)
 git_branch=""
 git_worktree=""
@@ -144,6 +245,50 @@ if [ -n "$cwd" ] && [ -d "$cwd" ]; then
   fi
 fi
 
+# Live usage: detecta troca de conta na mesma sessão e busca os rate limits reais
+# da conta ativa na API, sobrescrevendo os números (velhos) vindos do stdin.
+stale_account_warn=""
+if [ "$SHOW_LIVE_USAGE" != "0" ] && [ -n "$session_id" ]; then
+  cfg_json="${CLAUDE_CONFIG_DIR:+$CLAUDE_CONFIG_DIR/.claude.json}"
+  cfg_json="${cfg_json:-$HOME/.claude.json}"
+  active_uuid=$(jq -r '.oauthAccount.accountUuid // empty' "$cfg_json" 2>/dev/null)
+  state_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/statusline-state"
+  # active_uuid precisa ser um UUID "limpo" p/ uso seguro em nome de arquivo de cache
+  case "$active_uuid" in
+    *[!0-9A-Fa-f-]*|"") active_uuid="" ;;
+  esac
+  if [ -n "$active_uuid" ]; then
+    ( umask 077; mkdir -p "$state_dir" 2>/dev/null )
+    chmod 700 "$state_dir" 2>/dev/null   # garante privado mesmo se o dir já existia
+    # session_id é entrada externa: whitelist de charset p/ nome de arquivo
+    sid_key=$(printf '%s' "$session_id" | tr -c 'A-Za-z0-9._-' '_')
+    base_file="$state_dir/session-$sid_key"
+    baseline=""
+    [ -f "$base_file" ] && baseline=$(cat "$base_file" 2>/dev/null)
+    # Toca o baseline ANTES do reap p/ uma sessão sem render há >1 dia não perdê-lo.
+    touch "$base_file" 2>/dev/null; chmod 600 "$base_file" 2>/dev/null
+    # Agora sim reapeia arquivos realmente velhos (o baseline atual acabou de ser tocado)
+    find "$state_dir" -type f -mtime +1 -delete 2>/dev/null
+    if [ -z "$baseline" ]; then
+      ( umask 077; printf '%s' "$active_uuid" > "$base_file" 2>/dev/null )
+    elif [ "$baseline" != "$active_uuid" ]; then
+      fresh=$(get_live_usage "$active_uuid")
+      if [ -n "$fresh" ]; then
+        # Houve troca: TODOS os números do stdin são da conta antiga. Zera antes de
+        # aplicar os frescos p/ nunca misturar conta nova com conta velha.
+        five_pct=""; five_reset=""; seven_pct=""; seven_reset=""
+        IFS='|' read -r lf lfi ls lsi <<< "$fresh"
+        [ -n "$lf" ]  && five_pct="$lf"
+        [ -n "$lfi" ] && five_reset=$(iso_to_epoch "$lfi")
+        [ -n "$ls" ]  && seven_pct="$ls"
+        [ -n "$lsi" ] && seven_reset=$(iso_to_epoch "$lsi")
+      else
+        stale_account_warn=1
+      fi
+    fi
+  fi
+fi
+
 # Monta cada seção numa variável seg_<key> (vazio = oculta) -------------------
 seg_model=""
 seg_git=""
@@ -151,6 +296,13 @@ seg_context=""
 seg_session=""
 seg_weekly=""
 seg_cost=""
+seg_stale=""
+
+# Aviso de conta trocada (fallback quando não foi possível buscar o uso na API)
+if [ -n "$stale_account_warn" ]; then
+  # ⚠ = U+26A0 puro (largura 1); sem o seletor de variação U+FE0F (vide seg_context)
+  seg_stale=$(printf '\033[31m\xe2\x9a\xa0 %s\033[0m' "$L_STALE_ACCOUNT")
+fi
 
 # Modelo (+ esforço atual)
 if [ "$SHOW_MODEL" != "0" ]; then
@@ -245,6 +397,11 @@ for key in $order; do
   esac
   [ -n "$seg" ] && parts+=("$seg")
 done
+
+# Aviso de conta trocada sempre primeiro, para ficar evidente
+if [ -n "$seg_stale" ]; then
+  parts=("$seg_stale" "${parts[@]}")
+fi
 
 # Largura visível (em colunas) de uma string, sem códigos ANSI.
 # Os emojis 🌿 e 📁 contam como 1 code point mas ocupam 2 colunas, então somamos 1 por ocorrência.
