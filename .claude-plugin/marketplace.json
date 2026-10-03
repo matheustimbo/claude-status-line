@@ -1,0 +1,12 @@
+{
+  "name": "claude-status-line",
+  "description": "Status line em PT-BR para o Claude Code",
+  "owner": { "name": "Matheus Timbó Pereira", "url": "https://github.com/matheustimbo" },
+  "plugins": [
+    {
+      "name": "status-line-ptbr",
+      "source": "./plugins/status-line-ptbr",
+      "description": "Modelo, esforço, contexto e rate limits (sessão e semanal) acima do prompt, com cores e tempo até o reset"
+    }
+  ]
+}

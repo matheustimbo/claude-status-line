@@ -31,6 +31,22 @@ Opus 4.7 (1M context) (esforço alto) | Contexto: 6% | Sessao: 13% (reseta em 3h
 - 🧠 **Context always visible** — know when it's time to compact
 - 🪶 **Zero cost** — no API, no tokens; everything rendered locally, negligible CPU even with 10+ windows open
 
+## 🧩 Install as a mod (Claude Code 2.1.287+)
+
+The same line is also available as a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview): no `jq`, no `settings.json` edits. It draws in the band above the prompt, with the same colors and labels.
+
+```bash
+claude plugin marketplace add matheustimbo/claude-status-line
+claude plugin install status-line-ptbr@claude-status-line
+```
+
+Or, inside a session: `/plugin marketplace add matheustimbo/claude-status-line`, then `/plugin install status-line-ptbr@claude-status-line`.
+
+- If you also use the bash version, remove the `statusLine` block from `~/.claude/settings.json` to avoid showing the line twice.
+- Rate limits only appear on a Claude subscription (Pro/Max/Team); with API billing there are no 5h/7d windows to show.
+- If `/plugin` doesn't list the mod as active, Anthropic may have mods switched off remotely for your account (`claude plugin test` in an empty folder says `turned off in this process`). In that case keep using the bash version below.
+- Tested with Claude Code 2.1.288.
+
 ## 📦 Requirements
 
 - `bash`, `curl`

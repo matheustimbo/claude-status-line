@@ -1,0 +1,9 @@
+{
+  "name": "status-line-ptbr",
+  "version": "1.0.0",
+  "description": "Status line em PT-BR: modelo, esforço, contexto e rate limits (sessão e semanal) com cores e tempo até o reset",
+  "author": { "name": "Matheus Timbó Pereira", "url": "https://github.com/matheustimbo" },
+  "homepage": "https://github.com/matheustimbo/claude-status-line",
+  "repository": "https://github.com/matheustimbo/claude-status-line",
+  "license": "MIT"
+}

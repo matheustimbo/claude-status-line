@@ -1,0 +1,4 @@
+{
+  "description": "status-line-ptbr hooks module",
+  "modules": ["./register.js"]
+}
